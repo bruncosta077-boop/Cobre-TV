@@ -5,6 +5,7 @@
 - Fonte importada do pacote local `cobre-tv-starter.zip`.
 - A primeira compilação na pasta correta encerrou por GC thrashing: `gradle.properties` tinha o prefixo inválido `-e`, então o Gradle ignorava o heap de 2 GB. Corrigida para heap de 2 GB e metaspace de 1 GB.
 - Adicionado Gradle Wrapper 8.9 com SHA-256 oficial da distribuição fixado em `gradle-wrapper.properties`.
+- Removida a permissão `INTERNET` do manifesto enquanto o protótipo não implementa acesso de rede.
 - Build `:app:assembleDebug` passou tanto pelo Gradle local quanto pelo Wrapper 8.9: 35 tarefas. APK debug com 9.214.200 bytes; SHA-256 `a5a2e5074d2eef32aaf07429f35c42b6551ef655d04b4a75e4ba2f408997b3fb`.
 - Uma tentativa inicial foi executada na pasta externa ao projeto Gradle e descartada; todas as validações válidas ocorreram na pasta que contém `settings.gradle.kts`.
 - Sem teste em emulador ou TV física. Código ainda usa dados de demonstração e não reproduz áudio.

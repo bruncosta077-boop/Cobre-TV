@@ -7,6 +7,7 @@
 - Logo, ícone e banner do Cobre integrados ao pacote Android.
 - Corrigida a configuração de memória do Gradle, que estava escrita com o prefixo inválido `-e` e fazia o processo encerrar por thrashing do garbage collector.
 - Incluído Gradle Wrapper 8.9 para builds reproduzíveis.
+- Removida a permissão de Internet não utilizada nesta base sem recursos de rede.
 - `:app:assembleDebug` compilado localmente com sucesso; APK de debug não testado em aparelho e não representa uma release funcional.
 - Contribuições: [@dilucas00](https://github.com/dilucas00).
 
