@@ -7,7 +7,8 @@
 - Após aprovação, troca o código por uma sessão Cobre ID e guarda o refresh token cifrado com Android Keystore. A ação Sair encerra o dispositivo no servidor.
 - HTTP é aceito somente para IPv4 privado; HTTPS pode usar host DNS com certificado válido. Senhas de conta não são pedidas nem armazenadas na TV.
 - A biblioteca permanece com álbuns demonstrativos; não há acesso à biblioteca Desktop nem reprodução real nesta versão.
-- O build de CI precisa passar e o pareamento ainda precisa ser validado em TV real.
+- Compilação APK debug passou no GitHub Actions, execução `44743655894` (commit `bfceba4`). Isso comprova o build, não a comunicação com um Server real.
+- O pareamento ainda precisa ser testado em TV física com o Server e o Mobile reais; não há release assinada para distribuição.
 
 ## 0.1.0 — protótipo inicial
 

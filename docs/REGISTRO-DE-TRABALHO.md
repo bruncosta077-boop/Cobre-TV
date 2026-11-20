@@ -1,5 +1,12 @@
 # Registro de trabalho — Cobre TV
 
+## 2026-11-20 — pareamento Cobre ID 0.2.0
+
+- Adicionados endereço do Cobre Server, solicitação/exibição do código de pareamento, espera por aprovação no cliente autenticado e resgate único da sessão.
+- Refresh token da TV é guardado cifrado com chave do Android Keystore; HTTP só é aceito para IPv4 privado e HTTPS usa a confiança TLS do Android.
+- Build de APK debug passou no GitHub Actions [44743655894](https://github.com/bruncosta077-boop/Cobre-TV/actions/runs/44743655894) após adicionar a dependência/imports de Material 3 para os diálogos.
+- Ainda não houve teste em TV física nem troca real com Server/Mobile. A biblioteca é demonstrativa, não reproduz áudio, e não há assinatura de distribuição nem release publicada.
+
 ## 2026-11-19 — protótipo 0.1.0
 
 - Fonte importada do pacote local `cobre-tv-starter.zip`.
@@ -11,9 +18,9 @@
 - Sem teste em emulador ou TV física. Código ainda usa dados de demonstração e não reproduz áudio.
 - Logo e banner já estão dentro de `app/src/main/res`; @dilucas00 citado no crédito e nas notas.
 
-## Pendências antes de uma release funcional
+## Pendências para tornar a TV utilizável
 
-- Criar o repositório GitHub Cobre-TV e publicar esta base com build automatizado.
-- Implementar pareamento Cobre ID e descoberta/autorização de um Desktop.
-- Implementar catálogo, capas, playback Media3, fila e estados de erro/recuperação.
-- Criar release assinada e testar em Android TV/Google TV físico com controle remoto.
+- Descobrir Desktop autorizado e carregar sua biblioteca e capas reais.
+- Reproduzir áudio do Desktop com fila, controles, recuperação e estados de erro.
+- Testar pareamento e reprodução em Android TV/Google TV físico.
+- Criar fluxo de assinatura estável e publicação Android TV depois que atualização e reinstalação estiverem validadas.
