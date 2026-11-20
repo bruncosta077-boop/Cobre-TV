@@ -25,10 +25,11 @@ jobs:
         shell: bash
         run: |
           set +e
-          ./gradlew --no-daemon :app:assembleDebug --stacktrace 2>&1 | tee "$RUNNER_TEMP/cobre-tv-gradle.log"
+          ./gradlew --no-daemon :app:assembleDebug --console=plain 2>&1 | tee "$RUNNER_TEMP/cobre-tv-gradle.log"
           build_status=${PIPESTATUS[0]}
           if [ "$build_status" -ne 0 ]; then
-            details=$(tail -n 45 "$RUNNER_TEMP/cobre-tv-gradle.log")
+            details=$(grep -E '(^e: |^FAILURE:|^\* What went wrong:|^> Task .*FAILED|^Execution failed|Unresolved reference|Could not resolve|Compilation error)' "$RUNNER_TEMP/cobre-tv-gradle.log" | tail -n 35)
+            if [ -z "$details" ]; then details=$(tail -n 35 "$RUNNER_TEMP/cobre-tv-gradle.log"); fi
             details=${details//'%'/'%25'}
             details=${details//$'\r'/'%0D'}
             details=${details//$'\n'/'%0A'}
