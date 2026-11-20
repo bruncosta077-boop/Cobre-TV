@@ -11,6 +11,6 @@
 - `:app:assembleDebug` compilado localmente com sucesso; APK de debug não testado em aparelho e não representa uma release funcional.
 - Contribuições: [@dilucas00](https://github.com/dilucas00).
 
-### Limites conhecidos
+### Build do repositório (2026-11-20)`r`n`r`n- Corrigida a permissão executável do `gradlew` para o GitHub Actions em Linux. A compilação automatizada do APK debug passou no workflow [44684235826](https://github.com/bruncosta077-boop/Cobre-TV/actions/runs/44684235826). Isso valida a compilação, não adiciona recursos ao app.`r`n`r`n### Limites conhecidos
 
 Esta versão ainda usa `FakeMusicSource`, não adiciona mídia ao ExoPlayer e não implementa Cobre ID, streaming, biblioteca real, fila nem reprodução funcional.
