@@ -2,7 +2,7 @@
 
 ![Banner do Cobre TV](app/src/main/res/drawable/banner.png)
 
-Aplicativo em **protótipo — versão 0.1.0** para Android TV e Google TV. A base já compila; ainda não reproduz músicas nem se conecta ao Cobre Desktop ou ao Cobre ID.
+Aplicativo em **protótipo — versão 0.2.0** para Android TV e Google TV. Esta versão configura o endereço do Cobre Server e pareia a TV pelo Cobre ID usando um código aprovado no Mobile. A biblioteca ainda usa dados de exemplo e não reproduz músicas do Desktop.
 
 ## O que existe hoje
 
@@ -10,14 +10,17 @@ Aplicativo em **protótipo — versão 0.1.0** para Android TV e Google TV. A ba
 - Interface Compose com grade de álbuns de demonstração e barra “tocando agora”.
 - Instância do Media3 ExoPlayer com liberação no ciclo de vida da tela, mas ainda sem faixa ou `MediaItem`.
 - Ícone e banner Cobre incluídos nos recursos do Android.
+- Configuração do endereço do Cobre Server, limitada a HTTPS ou IPv4 privado quando usar HTTP local.
+- Pareamento Cobre ID: solicita código curto à API, apresenta-o na TV, aguarda aprovação autenticada em outro Cobre e resgata uma única sessão.
+- Refresh token da TV guardado cifrado com chave vinculada ao Android Keystore; remover a TV pelo Cobre ID encerra sua sessão.
 
 ## O que falta para ser utilizável
 
-- Parear a TV pelo Cobre ID e revogar/autenticar o aparelho.
 - Localizar um Desktop autorizado e consultar a biblioteca real.
 - Carregar capas e metadados, tocar áudio vindo do Desktop e exibir estados de conexão.
 - Implementar fila, controles, retomada, tratamento de erros e configurações de reprodução.
 - Testar navegação e playback em dispositivo Android TV/Google TV físico.
+- Testar o pareamento com uma instalação real do Cobre Server e autorizar pelo Mobile; compilação sozinha não verifica tráfego entre aparelhos.
 
 ## Compilar
 
