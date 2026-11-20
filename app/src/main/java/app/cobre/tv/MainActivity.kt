@@ -91,6 +91,7 @@ fun CobreTvApp(source: MusicSource = remember { FakeMusicSource() }) {
                         pairingChallenge = challenge
                         connectionMessage = "Aprove o código pelo Cobre Mobile ou Desktop."
                         val session = idRepository.awaitApproval(challenge)
+                        pairingChallenge = null
                         accountEmail = session.email
                         connectionMessage = "TV vinculada · ${session.email}"
                     } catch (error: CancellationException) {
