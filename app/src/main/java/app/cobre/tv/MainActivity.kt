@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -43,6 +44,7 @@ private val Bg = Color(0xFF121110)
 private val Panel = Color(0xFF201D1A)
 private val Muted = Color(0xFFAAA199)
 
+@UnstableApi
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +58,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @OptIn(ExperimentalTvMaterial3Api::class)
+@UnstableApi
 @Composable
 fun CobreTvApp() {
     val context = LocalContext.current

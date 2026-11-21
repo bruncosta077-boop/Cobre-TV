@@ -6,7 +6,8 @@
 - A grade agrupa faixas por artista/álbum e busca as capas do Desktop. Ao escolher um álbum, o Media3 ExoPlayer monta a fila e toca os streams diretamente do computador, com comandos de anterior, pausar/tocar e próxima.
 - O token curto da concessão é guardado cifrado no Android Keystore, enviado no cabeçalho `Authorization` e renovado junto com a sessão Cobre ID. O Server continua fora do caminho dos bytes de áudio.
 - HTTP local aceita somente IPv4 privado; redirecionamentos são recusados. Respostas do catálogo e capas têm limite de tamanho. Nenhuma URL contém token.
-- Build local `:app:assembleDebug` passou; após o último ajuste, `:app:assembleDebug :app:testDebugUnitTest` passou. A tarefa de testes retorna `NO-SOURCE` porque ainda não há testes unitários escritos.
+- Build local `:app:assembleDebug` e análise Android `:app:lintDebug` passaram. `:app:testDebugUnitTest` concluiu sem fontes (`NO-SOURCE`); ainda não há testes unitários escritos. O primeiro lint apontou um acesso de API indisponível no minSdk e chamadas Media3 sem marcação; os pontos foram corrigidos e o lint repetido passou.
+- O workflow Windows/Linux do repositório passou para o commit inicial da mudança no [run 44942603614](https://github.com/bruncosta077-boop/Cobre-TV/actions/runs/44942603614). Uma nova compilação de CI será acionada com os ajustes posteriores do lint.
 - Continua sem validação em Android TV/Google TV físico. Também falta testar pareamento, autorização, imagem e stream entre instalações reais; não publicar como release estável com base apenas no build.
 
 ## 2026-11-20 — pareamento Cobre ID 0.2.0

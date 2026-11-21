@@ -105,7 +105,8 @@ class DesktopLibraryRepository {
             setRequestProperty("Cache-Control", "no-store")
         }
         try {
-            if (connection.responseCode != HttpURLConnection.HTTP_OK || connection.contentLengthLong > MAX_COVER_BYTES) return@withContext null
+            val contentLength = connection.getHeaderField("Content-Length")?.toLongOrNull() ?: -1L
+            if (connection.responseCode != HttpURLConnection.HTTP_OK || contentLength > MAX_COVER_BYTES) return@withContext null
             val bytes = connection.inputStream.use { input ->
                 val output = java.io.ByteArrayOutputStream()
                 val buffer = ByteArray(8192)

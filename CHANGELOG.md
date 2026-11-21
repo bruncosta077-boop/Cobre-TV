@@ -7,7 +7,7 @@
 - Tokens curtos de acesso ao Desktop ficam cifrados no Android Keystore e são renovados durante a sessão.
 - Reproduz a fila do álbum no Media3 ExoPlayer com controles anterior, pausar/tocar e próxima; as requisições carregam o token no cabeçalho e o áudio segue direto do Desktop à TV.
 - O Cobre Server não retransmite áudio. HTTP continua restrito a endereço IPv4 privado; HTTPS usa validação normal de certificado do Android.
-- `:app:assembleDebug` e `:app:testDebugUnitTest` passaram localmente. A tarefa de teste não tem fontes (`NO-SOURCE`); ainda falta teste em TV física e o APK é de depuração, não release assinada.
+- `:app:assembleDebug` e `:app:lintDebug` passaram localmente. `:app:testDebugUnitTest` concluiu sem fontes de teste (`NO-SOURCE`); ainda falta teste em TV física e o APK é de depuração, não release assinada.
 
 ## 0.2.0 — pareamento Cobre ID
 
