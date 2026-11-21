@@ -67,8 +67,11 @@ fun CobreTvApp() {
     val idRepository = remember { TvIdRepository(context) }
     val desktopRepository = remember { DesktopLibraryRepository() }
     val desktopDiscovery = remember(context) { DesktopDiscovery(context) }
+    val streamMetrics = remember { TvStreamMetrics() }
     val scope = rememberCoroutineScope()
-    val httpFactory = remember { DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(false) }
+    val httpFactory = remember(streamMetrics) {
+        DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(false).setTransferListener(streamMetrics)
+    }
     val player = remember {
         ExoPlayer.Builder(context)
             .setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSource.Factory(context, httpFactory)))
@@ -79,6 +82,7 @@ fun CobreTvApp() {
     var serverAddress by remember { mutableStateOf(idRepository.serverUrl) }
     var desktopAddress by remember { mutableStateOf(idRepository.desktopOrigin) }
     var accountEmail by remember { mutableStateOf(idRepository.savedEmail) }
+    var sessionReady by remember { mutableStateOf(false) }
     var desktopHosts by remember { mutableStateOf(emptyList<TvDesktopHost>()) }
     var nearbyDesktops by remember { mutableStateOf(emptyList<NearbyDesktop>()) }
     var albums by remember { mutableStateOf(emptyList<DesktopAlbum>()) }
@@ -136,27 +140,41 @@ fun CobreTvApp() {
     LaunchedEffect(Unit) {
         if (idRepository.isConnected && serverAddress.isNotBlank()) {
             busy = true
-            runCatching { idRepository.restoreSession() }
-                .onSuccess { session ->
-                    accountEmail = session.email
-                    connectionMessage = "Cobre ID conectado · ${session.email}"
-                    connectionError = false
-                    if (idRepository.desktopGrantId != null && desktopAddress.isNotBlank()) {
-                        runCatching {
-                            val grant = idRepository.refreshDesktopGrant()
-                            activeGrantToken = grant.token
-                            val catalog = desktopRepository.load(desktopAddress, grant.token)
-                            albums = catalog
-                            connectionMessage = "Computador conectado · ${catalog.sumOf { it.tracks.size }} faixas em ${catalog.size} álbuns."
-                        }.onFailure { error ->
-                            activeGrantToken = ""
-                            connectionMessage = error.message ?: "Não foi possível restaurar o acesso ao computador."
-                            connectionError = true
+            try {
+                runCatching { idRepository.restoreSession() }
+                    .onSuccess { session ->
+                        accountEmail = session.email
+                        connectionMessage = "Cobre ID conectado · ${session.email}"
+                        connectionError = false
+                        if (idRepository.desktopGrantId != null && desktopAddress.isNotBlank()) {
+                            runCatching {
+                                val grant = idRepository.refreshDesktopGrant()
+                                activeGrantToken = grant.token
+                                val catalog = desktopRepository.load(desktopAddress, grant.token)
+                                albums = catalog
+                                connectionMessage = "Computador conectado · ${catalog.sumOf { it.tracks.size }} faixas em ${catalog.size} álbuns."
+                            }.onFailure { error ->
+                                activeGrantToken = ""
+                                connectionMessage = error.message ?: "Não foi possível restaurar o acesso ao computador."
+                                connectionError = true
+                            }
                         }
                     }
-                }
-                .onFailure { error -> connectionMessage = error.message ?: "Sessão do Cobre ID expirada."; connectionError = true }
-            busy = false
+                    .onFailure { error -> connectionMessage = error.message ?: "Sessão do Cobre ID expirada."; connectionError = true }
+            } finally {
+                busy = false
+                sessionReady = true
+            }
+        } else {
+            sessionReady = true
+        }
+    }
+
+    LaunchedEffect(accountEmail, sessionReady) {
+        if (accountEmail.isBlank() || !sessionReady) return@LaunchedEffect
+        while (isActive) {
+            runCatching { idRepository.sendPresence(streamMetrics.recent()) }
+            delay(20_000L)
         }
     }
 

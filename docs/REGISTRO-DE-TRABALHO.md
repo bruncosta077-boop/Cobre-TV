@@ -1,5 +1,12 @@
 # Registro de trabalho — Cobre TV
 
+## 2026-11-21 — heartbeat e telemetria do stream 0.5.0
+
+- A TV agora envia presença Cobre ID a cada 20 segundos enquanto o app está aberto; refresh da sessão ocorre antes de o token de acesso expirar.
+- `TvStreamMetrics` acompanha somente `/v1/tracks/{id}/stream`, mede latência ao primeiro byte e vazão agregada, descarta medidas após dois minutos e não registra metadados pessoais.
+- Métricas seguem no corpo autenticado de `/v1/presence`; o áudio permanece direto do Desktop para a TV.
+- Build debug e lint passaram localmente após habilitar `BuildConfig`; teste físico em TV/Google TV ainda é necessário para confirmar presença, stream e estados de rede reais.
+
 ## 2026-11-21 — descoberta local 0.4.0
 
 - Adicionada busca mDNS pelo serviço `_cobre._tcp` enquanto a tela de conexão está aberta. A TV filtra protocolo/API, UUID do Desktop e IPv4 local antes de oferecer um computador.

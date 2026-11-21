@@ -28,6 +28,7 @@ class TvIdException(message: String, val code: String? = null, val status: Int =
 class TvIdRepository(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("cobre-tv-id", Context.MODE_PRIVATE)
     private var accessToken: String? = null
+    private var accessTokenExpiresAt = 0L
     val serverUrl: String get() = prefs.getString("server_url", "").orEmpty()
     val isConnected: Boolean get() = !readRefreshToken().isNullOrBlank()
     val savedEmail: String get() = prefs.getString("email", "").orEmpty()
@@ -123,6 +124,7 @@ class TvIdRepository(context: Context) {
                 val access = response.optString("accessToken")
                 if (user == null || device == null || refresh.isBlank() || access.isBlank()) throw TvIdException("O servidor não retornou uma sessão Cobre ID completa.")
                 accessToken = access
+                accessTokenExpiresAt = System.currentTimeMillis() + response.optLong("expiresIn", 900L).coerceIn(1L, 3600L) * 1000L
                 saveRefreshToken(refresh)
                 val email = user.optString("email")
                 prefs.edit().putString("email", email).putString("device_id", device.optString("id")).apply()
@@ -148,6 +150,7 @@ class TvIdRepository(context: Context) {
             val nextRefresh = response.optString("refreshToken")
             accessToken = response.optString("accessToken")
             if (accessToken.isNullOrBlank() || nextRefresh.isBlank()) throw TvIdException("O servidor não retornou uma sessão válida.")
+            accessTokenExpiresAt = System.currentTimeMillis() + response.optLong("expiresIn", 900L).coerceIn(1L, 3600L) * 1000L
             saveRefreshToken(nextRefresh)
             prefs.edit().putString("email", user.optString("email")).putString("device_id", device.optString("id")).apply()
             TvAccountSession(user.optString("email"), device.optString("name", "Cobre TV"))
@@ -162,8 +165,20 @@ class TvIdRepository(context: Context) {
         try { request("/v1/logout", "POST", JSONObject(), authorize = true) } finally { clearSession() }
     }
 
+    suspend fun sendPresence(measurement: TvStreamMeasurement?) = withContext(Dispatchers.IO) {
+        if (accessToken.isNullOrBlank() || accessTokenExpiresAt <= System.currentTimeMillis() + 60_000L) restoreSession()
+        val meta = JSONObject().put("platform", "Android TV").put("appVersion", BuildConfig.VERSION_NAME)
+        measurement?.let {
+            meta.put("streamLatencyMs", it.latencyMs)
+                .put("streamBytesPerSecond", it.bytesPerSecond)
+                .put("streamAgeMs", it.ageMs)
+        }
+        request("/v1/presence", "POST", JSONObject().put("meta", meta), authorize = true)
+    }
+
     private fun clearSession() {
         accessToken = null
+        accessTokenExpiresAt = 0L
         prefs.edit().remove("refresh_token").remove("email").remove("device_id").apply()
         clearDesktopGrant()
     }

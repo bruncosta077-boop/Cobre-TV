@@ -1,5 +1,14 @@
 # Histórico de versões — Cobre TV
 
+## 0.5.0 — presença e diagnóstico do áudio
+
+- A TV envia presença Cobre ID a cada 20 segundos enquanto o app está aberto, para aparecer online no painel do Server.
+- A TV mede latência inicial e taxa de bytes somente na rota de áudio autorizada do Desktop; envia métricas agregadas junto da presença, sem títulos, caminhos ou conteúdo.
+- Renovação de sessão ocorre antes do vencimento do token usado para enviar presença. O envio não altera concessões ou aprovações existentes.
+- As medições usam o mesmo contrato do Mobile e o Server pode marcar sua idade; dados antigos deixam de ser apresentados como velocidade atual.
+- `:app:assembleDebug` e `:app:lintDebug` passaram localmente após habilitar a geração de `BuildConfig`. TV física continua necessária para confirmar heartbeat e áudio real.
+- O pacote TV permanece APK de depuração até haver chave estável e validação em Android TV/Google TV.
+
 ## 0.4.0 — encontrar computadores na rede local
 
 - A TV procura automaticamente o Cobre Desktop na rede local enquanto a tela de conexão está aberta; o endereço manual continua disponível na TV e QR/endereço manual seguem disponíveis no Mobile.

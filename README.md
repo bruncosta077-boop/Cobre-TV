@@ -2,7 +2,7 @@
 
 ![Banner do Cobre TV](app/src/main/res/drawable/banner.png)
 
-Aplicativo em **protótipo — versão 0.4.0** para Android TV e Google TV. A TV entra no Cobre ID, encontra computadores automaticamente na rede local ou usa o endereço manual, pede autorização por aparelho e carrega a biblioteca real. Com a aprovação no Desktop, reproduz o áudio diretamente pela rede local.
+Aplicativo em **protótipo — versão 0.5.0** para Android TV e Google TV. A TV entra no Cobre ID, encontra computadores automaticamente na rede local ou usa o endereço manual, pede autorização por aparelho e carrega a biblioteca real. Com a aprovação no Desktop, reproduz o áudio diretamente pela rede local e informa presença e métricas agregadas de stream ao Cobre Server.
 
 ## O que existe hoje
 
@@ -15,6 +15,7 @@ Aplicativo em **protótipo — versão 0.4.0** para Android TV e Google TV. A TV
 - Lista os Desktops registrados na conta, permite informar o endereço local e solicita escopos de biblioteca, streaming e controle. O Desktop precisa aprovar a TV.
 - Tokens de sessão e concessão ficam cifrados com uma chave vinculada ao Android Keystore; as concessões curtas são renovadas durante o uso.
 - O áudio é entregue pelo Desktop diretamente à TV usando autorização no cabeçalho e suporte do host a HTTP Range. O Cobre Server só coordena conta, presença e consentimento.
+- Enquanto o app está aberto, presença é enviada periodicamente ao Cobre Server. A TV reporta latência inicial e taxa recebida somente para streams do Desktop, sem enviar nomes ou conteúdo das faixas.
 - HTTP é limitado a IPv4 privado da rede local; HTTPS depende de certificado aceito pelo Android.
 
 ## O que falta para ser utilizável
