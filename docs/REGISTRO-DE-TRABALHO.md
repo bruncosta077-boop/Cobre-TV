@@ -1,5 +1,14 @@
 # Registro de trabalho — Cobre TV
 
+## 2026-11-21 — base de biblioteca e streaming direto 0.3.0
+
+- Troquei o catálogo fictício por uma conexão real: a TV lista Desktops autenticados na conta, solicita escopos `library.read`, `playback.read`, `playback.control` e `stream`, aguarda a aprovação no Desktop e consulta a biblioteca autorizada.
+- A grade agrupa faixas por artista/álbum e busca as capas do Desktop. Ao escolher um álbum, o Media3 ExoPlayer monta a fila e toca os streams diretamente do computador, com comandos de anterior, pausar/tocar e próxima.
+- O token curto da concessão é guardado cifrado no Android Keystore, enviado no cabeçalho `Authorization` e renovado junto com a sessão Cobre ID. O Server continua fora do caminho dos bytes de áudio.
+- HTTP local aceita somente IPv4 privado; redirecionamentos são recusados. Respostas do catálogo e capas têm limite de tamanho. Nenhuma URL contém token.
+- Build local `:app:assembleDebug` passou; após o último ajuste, `:app:assembleDebug :app:testDebugUnitTest` passou. A tarefa de testes retorna `NO-SOURCE` porque ainda não há testes unitários escritos.
+- Continua sem validação em Android TV/Google TV físico. Também falta testar pareamento, autorização, imagem e stream entre instalações reais; não publicar como release estável com base apenas no build.
+
 ## 2026-11-20 — pareamento Cobre ID 0.2.0
 
 - Adicionados endereço do Cobre Server, solicitação/exibição do código de pareamento, espera por aprovação no cliente autenticado e resgate único da sessão.

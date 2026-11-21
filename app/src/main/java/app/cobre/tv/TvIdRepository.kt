@@ -19,6 +19,8 @@ import javax.crypto.spec.GCMParameterSpec
 
 data class TvPairingChallenge(val deviceCode: String, val userCode: String, val expiresInSeconds: Long, val intervalSeconds: Long)
 data class TvAccountSession(val email: String, val deviceName: String)
+data class TvDesktopHost(val id: String, val name: String, val online: Boolean)
+data class TvDesktopGrant(val id: String, val token: String, val expiresAt: Long, val consentExpiresAt: Long)
 
 class TvIdException(message: String, val code: String? = null, val status: Int = 0, val retryAfterSeconds: Long? = null) : Exception(message)
 
@@ -29,6 +31,10 @@ class TvIdRepository(context: Context) {
     val serverUrl: String get() = prefs.getString("server_url", "").orEmpty()
     val isConnected: Boolean get() = !readRefreshToken().isNullOrBlank()
     val savedEmail: String get() = prefs.getString("email", "").orEmpty()
+    val desktopOrigin: String get() = prefs.getString("desktop_origin", "").orEmpty()
+    val desktopHostId: String? get() = prefs.getString("desktop_host_id", null)
+    val desktopGrantId: String? get() = prefs.getString("desktop_grant_id", null)
+    val desktopGrantToken: String? get() = readSecret("desktop_grant_token")
 
     fun saveServerUrl(raw: String) {
         val normalized = normalizeUrl(raw)
@@ -37,6 +43,61 @@ class TvIdRepository(context: Context) {
 
     suspend fun checkServer() = withContext(Dispatchers.IO) {
         request("/health", "GET", null, authorize = false).optBoolean("ok")
+    }
+
+    fun saveDesktopOrigin(raw: String) {
+        val normalized = normalizeDesktopOrigin(raw)
+        prefs.edit().putString("desktop_origin", normalized).apply()
+    }
+
+    suspend fun desktops(): List<TvDesktopHost> = withContext(Dispatchers.IO) {
+        val list = request("/v1/hosts", "GET", null, authorize = true).optJSONArray("hosts")
+            ?: throw TvIdException("O Cobre Server retornou uma lista de computadores inválida.")
+        (0 until list.length()).mapNotNull { index ->
+            val host = list.optJSONObject(index) ?: return@mapNotNull null
+            val id = host.optString("id")
+            if (id.isBlank()) null else TvDesktopHost(id, host.optString("name", "Cobre Desktop"), host.optBoolean("online"))
+        }
+    }
+
+    suspend fun requestDesktopAccess(hostId: String): Pair<String, Long> = withContext(Dispatchers.IO) {
+        val body = JSONObject().put("scopes", org.json.JSONArray(listOf("library.read", "playback.read", "playback.control", "stream")))
+        val result = request("/v1/hosts/$hostId/access-requests", "POST", body, authorize = true)
+        result.getString("requestId") to result.optLong("expiresIn", 300L).coerceIn(15L, 600L)
+    }
+
+    suspend fun pollDesktopAccess(hostId: String, requestId: String): TvDesktopGrant? = withContext(Dispatchers.IO) {
+        val result = request("/v1/hosts/$hostId/access-requests/$requestId", "GET", null, authorize = true)
+        if (result.optString("status") == "pending") return@withContext null
+        if (result.optString("status") != "redeemed") throw TvIdException("O servidor retornou um estado de autorização desconhecido.")
+        val grantId = result.getString("grantId")
+        val token = result.getString("grantToken")
+        val expiresAt = result.optLong("expiresAt")
+        val consentExpiresAt = result.optLong("consentExpiresAt")
+        if (token.isBlank() || expiresAt <= System.currentTimeMillis()) throw TvIdException("A autorização recebida expirou. Tente novamente.")
+        prefs.edit().putString("desktop_host_id", hostId).putString("desktop_grant_id", grantId)
+            .putLong("desktop_token_expires_at", expiresAt).putLong("desktop_consent_expires_at", consentExpiresAt).apply()
+        saveSecret("desktop_grant_token", token)
+        TvDesktopGrant(grantId, token, expiresAt, consentExpiresAt)
+    }
+
+    suspend fun refreshDesktopGrant(): TvDesktopGrant = withContext(Dispatchers.IO) {
+        val hostId = desktopHostId ?: throw TvIdException("Conecte novamente o computador.")
+        val grantId = desktopGrantId ?: throw TvIdException("Conecte novamente o computador.")
+        val result = request("/v1/hosts/$hostId/access-grants/$grantId/refresh", "POST", JSONObject(), authorize = true)
+        val token = result.getString("grantToken")
+        val expiresAt = result.optLong("expiresAt")
+        val consentExpiresAt = result.optLong("consentExpiresAt")
+        if (token.isBlank() || expiresAt <= System.currentTimeMillis()) throw TvIdException("O servidor não renovou a autorização do Desktop.")
+        prefs.edit().putLong("desktop_token_expires_at", expiresAt).putLong("desktop_consent_expires_at", consentExpiresAt).apply()
+        saveSecret("desktop_grant_token", token)
+        TvDesktopGrant(grantId, token, expiresAt, consentExpiresAt)
+    }
+
+    fun clearDesktopGrant() {
+        prefs.edit().remove("desktop_host_id").remove("desktop_grant_id")
+            .remove("desktop_token_expires_at").remove("desktop_consent_expires_at").apply()
+        removeSecret("desktop_grant_token")
     }
 
     suspend fun requestPairing(): TvPairingChallenge = withContext(Dispatchers.IO) {
@@ -104,6 +165,7 @@ class TvIdRepository(context: Context) {
     private fun clearSession() {
         accessToken = null
         prefs.edit().remove("refresh_token").remove("email").remove("device_id").apply()
+        clearDesktopGrant()
     }
 
     private fun request(path: String, method: String, body: JSONObject?, authorize: Boolean): JSONObject {
@@ -150,6 +212,18 @@ class TvIdRepository(context: Context) {
         return value
     }
 
+    private fun normalizeDesktopOrigin(raw: String): String {
+        val value = raw.trim().trimEnd('/')
+        val uri = runCatching { URI(value) }.getOrElse { throw TvIdException("Endereço do Desktop inválido.") }
+        val scheme = uri.scheme?.lowercase()
+        val host = uri.host?.lowercase().orEmpty()
+        if (scheme !in setOf("http", "https") || host.isBlank() || uri.userInfo != null || uri.query != null || uri.fragment != null || uri.rawPath !in listOf("", "/")) {
+            throw TvIdException("Informe somente o endereço local do Cobre Desktop.")
+        }
+        if (scheme == "http" && !isPrivateIpv4(host)) throw TvIdException("HTTP só é aceito para um endereço IPv4 privado da rede local.")
+        return value
+    }
+
     private fun isPrivateIpv4(host: String): Boolean {
         val parts = host.split('.')
         if (parts.size != 4) return false
@@ -164,6 +238,21 @@ class TvIdRepository(context: Context) {
         val encrypted = cipher.iv + cipher.doFinal(token.toByteArray(Charsets.UTF_8))
         prefs.edit().putString("refresh_token", Base64.encodeToString(encrypted, Base64.NO_WRAP)).apply()
     }
+
+    private fun saveSecret(key: String, value: String) {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.ENCRYPT_MODE, keystoreKey()) }
+        val encrypted = cipher.iv + cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+        prefs.edit().putString(key, Base64.encodeToString(encrypted, Base64.NO_WRAP)).apply()
+    }
+
+    private fun readSecret(key: String): String? = runCatching {
+        val bytes = Base64.decode(prefs.getString(key, null) ?: return null, Base64.NO_WRAP)
+        if (bytes.size <= 12) return null
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.DECRYPT_MODE, keystoreKey(), GCMParameterSpec(128, bytes.copyOfRange(0, 12))) }
+        String(cipher.doFinal(bytes.copyOfRange(12, bytes.size)), Charsets.UTF_8)
+    }.getOrNull()
+
+    private fun removeSecret(key: String) { prefs.edit().remove(key).apply() }
 
     private fun readRefreshToken(): String? = runCatching {
         val bytes = Base64.decode(prefs.getString("refresh_token", null) ?: return null, Base64.NO_WRAP)
