@@ -6,6 +6,7 @@
 - `TvStreamMetrics` acompanha somente `/v1/tracks/{id}/stream`, mede latência ao primeiro byte e vazão agregada, descarta medidas após dois minutos e não registra metadados pessoais.
 - Métricas seguem no corpo autenticado de `/v1/presence`; o áudio permanece direto do Desktop para a TV.
 - Build debug e lint passaram localmente após habilitar `BuildConfig`; teste físico em TV/Google TV ainda é necessário para confirmar presença, stream e estados de rede reais.
+- O GitHub Actions compilou e guardou um APK debug temporário no [run 44949012682](https://github.com/bruncosta077-boop/Cobre-TV/actions/runs/44949012682).
 
 ## 2026-11-21 — descoberta local 0.4.0
 

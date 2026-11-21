@@ -7,6 +7,7 @@
 - Renovação de sessão ocorre antes do vencimento do token usado para enviar presença. O envio não altera concessões ou aprovações existentes.
 - As medições usam o mesmo contrato do Mobile e o Server pode marcar sua idade; dados antigos deixam de ser apresentados como velocidade atual.
 - `:app:assembleDebug` e `:app:lintDebug` passaram localmente após habilitar a geração de `BuildConfig`. TV física continua necessária para confirmar heartbeat e áudio real.
+- O workflow do GitHub compilou a versão e publicou um APK debug temporário no [run 44949012682](https://github.com/bruncosta077-boop/Cobre-TV/actions/runs/44949012682).
 - O pacote TV permanece APK de depuração até haver chave estável e validação em Android TV/Google TV.
 
 ## 0.4.0 — encontrar computadores na rede local
