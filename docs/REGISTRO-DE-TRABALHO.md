@@ -5,6 +5,7 @@
 - Adicionada busca mDNS pelo serviço `_cobre._tcp` enquanto a tela de conexão está aberta. A TV filtra protocolo/API, UUID do Desktop e IPv4 local antes de oferecer um computador.
 - Um Desktop encontrado usa o fluxo já existente de pedido Cobre ID e aprovação local; nenhum segredo passa pelo anúncio. A seleção e o endereço manual continuam disponíveis como alternativa.
 - Compilação `:app:assembleDebug` e análise `:app:lintDebug` passaram localmente; o lint aponta somente depreciações da API Android `NsdManager` usada para resolver o serviço.
+- O workflow GitHub compilou o commit e guardou APK debug temporário no [run 44946435962](https://github.com/bruncosta077-boop/Cobre-TV/actions/runs/44946435962).
 - Continua necessário validar descoberta, conexão, aprovação e áudio em uma TV física e na rede real. CI gera somente APK de depuração e não existe assinatura de distribuição para TV.
 
 ## 2026-11-21 — base de biblioteca e streaming direto 0.3.0
