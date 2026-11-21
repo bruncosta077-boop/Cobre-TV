@@ -2,7 +2,7 @@
 
 ![Banner do Cobre TV](app/src/main/res/drawable/banner.png)
 
-Aplicativo em **protótipo — versão 0.3.0** para Android TV e Google TV. A TV entra no Cobre ID, localiza Desktops da conta, pede autorização por aparelho e carrega a biblioteca real. Com a aprovação no Desktop, reproduz o áudio diretamente pela rede local.
+Aplicativo em **protótipo — versão 0.4.0** para Android TV e Google TV. A TV entra no Cobre ID, encontra computadores automaticamente na rede local ou usa o endereço manual, pede autorização por aparelho e carrega a biblioteca real. Com a aprovação no Desktop, reproduz o áudio diretamente pela rede local.
 
 ## O que existe hoje
 
@@ -19,7 +19,7 @@ Aplicativo em **protótipo — versão 0.3.0** para Android TV e Google TV. A TV
 
 ## O que falta para ser utilizável
 
-- Validar o pareamento, autorização, capas, reprodução, troca de faixa e renovação de tokens em Android TV/Google TV físico.
+- Validar a descoberta local, pareamento, autorização, capas, reprodução, troca de faixa e renovação de tokens em Android TV/Google TV físico. A busca mDNS requer Desktop 3.13.0 ou posterior.
 - Adicionar retomada após troca de rede, sincronização de estado e navegação detalhada por faixa.
 - Testar o fluxo com instalações reais do Cobre Server, Desktop e Mobile; compilação sozinha não comprova a conexão entre aparelhos.
 - Criar assinatura estável e release instalável depois de validar a migração e a atualização em uma TV real.

@@ -1,5 +1,13 @@
 # Histórico de versões — Cobre TV
 
+## 0.4.0 — encontrar computadores na rede local
+
+- A TV procura automaticamente o Cobre Desktop na rede local enquanto a tela de conexão está aberta; o endereço manual continua disponível na TV e QR/endereço manual seguem disponíveis no Mobile.
+- A descoberta anuncia apenas identificador do Desktop e versões do protocolo, sem token ou credenciais. Encontrar um computador não concede acesso: o Cobre ID ainda solicita e exige aprovação no Desktop.
+- Os bytes de áudio continuam indo diretamente do Desktop para a TV; o Cobre Server coordena conta, presença e autorização.
+- `:app:assembleDebug` e `:app:lintDebug` passaram localmente. O lint reporta apenas avisos de APIs Android NSD antigas/depreciadas nesta implementação. Sem Android TV física, descoberta multicast e reprodução real entre aparelhos ainda não foram validadas.
+- Esta é uma compilação de desenvolvimento/debug, não uma release assinada para distribuição.
+
 ## 0.3.0 — biblioteca Desktop e reprodução direta (protótipo)
 
 - Substitui álbuns de demonstração por catálogo real do Desktop, agrupado por artista/álbum e com capas autorizadas.

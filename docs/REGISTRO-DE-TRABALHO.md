@@ -1,5 +1,12 @@
 # Registro de trabalho — Cobre TV
 
+## 2026-11-21 — descoberta local 0.4.0
+
+- Adicionada busca mDNS pelo serviço `_cobre._tcp` enquanto a tela de conexão está aberta. A TV filtra protocolo/API, UUID do Desktop e IPv4 local antes de oferecer um computador.
+- Um Desktop encontrado usa o fluxo já existente de pedido Cobre ID e aprovação local; nenhum segredo passa pelo anúncio. A seleção e o endereço manual continuam disponíveis como alternativa.
+- Compilação `:app:assembleDebug` e análise `:app:lintDebug` passaram localmente; o lint aponta somente depreciações da API Android `NsdManager` usada para resolver o serviço.
+- Continua necessário validar descoberta, conexão, aprovação e áudio em uma TV física e na rede real. CI gera somente APK de depuração e não existe assinatura de distribuição para TV.
+
 ## 2026-11-21 — base de biblioteca e streaming direto 0.3.0
 
 - Troquei o catálogo fictício por uma conexão real: a TV lista Desktops autenticados na conta, solicita escopos `library.read`, `playback.read`, `playback.control` e `stream`, aguarda a aprovação no Desktop e consulta a biblioteca autorizada.

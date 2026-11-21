@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -64,6 +66,7 @@ fun CobreTvApp() {
     val context = LocalContext.current
     val idRepository = remember { TvIdRepository(context) }
     val desktopRepository = remember { DesktopLibraryRepository() }
+    val desktopDiscovery = remember(context) { DesktopDiscovery(context) }
     val scope = rememberCoroutineScope()
     val httpFactory = remember { DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(false) }
     val player = remember {
@@ -77,6 +80,7 @@ fun CobreTvApp() {
     var desktopAddress by remember { mutableStateOf(idRepository.desktopOrigin) }
     var accountEmail by remember { mutableStateOf(idRepository.savedEmail) }
     var desktopHosts by remember { mutableStateOf(emptyList<TvDesktopHost>()) }
+    var nearbyDesktops by remember { mutableStateOf(emptyList<NearbyDesktop>()) }
     var albums by remember { mutableStateOf(emptyList<DesktopAlbum>()) }
     var activeGrantToken by remember { mutableStateOf(idRepository.desktopGrantToken.orEmpty()) }
     var connectionMessage by remember { mutableStateOf("Conecte o Cobre ID e escolha um computador.") }
@@ -184,6 +188,49 @@ fun CobreTvApp() {
             runCatching { idRepository.desktops() }
                 .onSuccess { desktopHosts = it }
                 .onFailure { error -> connectionMessage = error.message ?: "Não foi possível localizar seus computadores."; connectionError = true }
+        }
+    }
+
+    DisposableEffect(showDesktopDialog, accountEmail, desktopDiscovery) {
+        if (showDesktopDialog && accountEmail.isNotBlank()) {
+            desktopDiscovery.start(
+                onChanged = { nearbyDesktops = it },
+                onError = { connectionMessage = it; connectionError = true },
+            )
+        }
+        onDispose {
+            desktopDiscovery.stop()
+            nearbyDesktops = emptyList()
+        }
+    }
+
+    fun connectDesktop(hostId: String, hostName: String, origin: String) {
+        scope.launch {
+            busy = true
+            try {
+                idRepository.saveDesktopOrigin(origin)
+                desktopAddress = idRepository.desktopOrigin
+                val (requestId, expiresIn) = idRepository.requestDesktopAccess(hostId)
+                showDesktopDialog = false
+                connectionMessage = "Pedido enviado a $hostName. Aprove no Cobre Desktop."
+                connectionError = false
+                val deadline = System.currentTimeMillis() + expiresIn * 1000L
+                var grant: TvDesktopGrant? = null
+                while (System.currentTimeMillis() < deadline && grant == null) {
+                    delay(2500L)
+                    grant = idRepository.pollDesktopAccess(hostId, requestId)
+                }
+                val approved = grant ?: throw IllegalStateException("O pedido expirou. Tente conectar novamente.")
+                activeGrantToken = approved.token
+                httpFactory.setDefaultRequestProperties(mapOf("Authorization" to "Bearer ${approved.token}", "Cache-Control" to "no-store"))
+                connectionMessage = "Acesso aprovado. Carregando biblioteca do computador…"
+                val catalog = desktopRepository.load(desktopAddress, approved.token)
+                albums = catalog
+                connectionMessage = "Computador conectado · ${catalog.sumOf { it.tracks.size }} faixas em ${catalog.size} álbuns."
+                connectionError = false
+            } catch (error: CancellationException) { throw error }
+            catch (error: Exception) { connectionMessage = error.message ?: "Não foi possível conectar ao computador."; connectionError = true }
+            finally { busy = false }
         }
     }
 
@@ -309,40 +356,25 @@ fun CobreTvApp() {
     if (showDesktopDialog) {
         AlertDialog(
             onDismissRequest = { showDesktopDialog = false }, title = { Text("Conectar computador") },
-            text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Informe o endereço local mostrado em Acesso remoto no Desktop. A chave não deve ser incluída no endereço.", color = Muted)
+            text = { Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Escolha um computador encontrado na rede ou use o endereço manual. A descoberta só localiza o Desktop; o acesso ainda exige aprovação.", color = Muted)
+                Text("Encontrados nesta rede", color = Copper2, style = MaterialTheme.typography.titleMedium)
+                if (nearbyDesktops.isEmpty()) Text("Procurando… Se nada aparecer, confirme que os aparelhos estão na mesma rede.", color = Muted)
+                nearbyDesktops.forEach { nearby ->
+                    Button(
+                        onClick = { connectDesktop(nearby.hostId, nearby.name, nearby.origin) },
+                        enabled = !busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(nearby.name) }
+                }
+                Text("Conectar manualmente", color = Copper2, style = MaterialTheme.typography.titleMedium)
+                Text("A chave não deve ser incluída no endereço.", color = Muted)
                 OutlinedTextField(value = desktopAddress, onValueChange = { desktopAddress = it }, label = { Text("Endereço local do Desktop") }, placeholder = { Text("http://192.168.1.20:8787") }, singleLine = true)
-                Text("Escolha seu Desktop. Ele precisa estar online e aprovar esta TV.", color = Muted)
+                Text("Computadores da sua conta. O acesso precisa ser aprovado no Desktop.", color = Muted)
                 if (desktopHosts.isEmpty()) Text("Nenhum Desktop registrado nesta conta.", color = Muted)
                 desktopHosts.forEach { host ->
                     Button(onClick = {
-                        scope.launch {
-                            busy = true
-                            try {
-                                idRepository.saveDesktopOrigin(desktopAddress)
-                                desktopAddress = idRepository.desktopOrigin
-                                val (requestId, expiresIn) = idRepository.requestDesktopAccess(host.id)
-                                showDesktopDialog = false
-                                connectionMessage = "Pedido enviado a ${host.name}. Aprove no Cobre Desktop."
-                                connectionError = false
-                                val deadline = System.currentTimeMillis() + expiresIn * 1000L
-                                var grant: TvDesktopGrant? = null
-                                while (System.currentTimeMillis() < deadline && grant == null) {
-                                    delay(2500L)
-                                    grant = idRepository.pollDesktopAccess(host.id, requestId)
-                                }
-                                val approved = grant ?: throw IllegalStateException("O pedido expirou. Tente conectar novamente.")
-                                activeGrantToken = approved.token
-                                httpFactory.setDefaultRequestProperties(mapOf("Authorization" to "Bearer ${approved.token}", "Cache-Control" to "no-store"))
-                                connectionMessage = "Acesso aprovado. Carregando biblioteca do computador…"
-                                val catalog = desktopRepository.load(desktopAddress, approved.token)
-                                albums = catalog
-                                connectionMessage = "Computador conectado · ${catalog.sumOf { it.tracks.size }} faixas em ${catalog.size} álbuns."
-                                connectionError = false
-                            } catch (error: CancellationException) { throw error }
-                            catch (error: Exception) { connectionMessage = error.message ?: "Não foi possível conectar ao computador."; connectionError = true }
-                            finally { busy = false }
-                        }
+                        connectDesktop(host.id, host.name, desktopAddress)
                     }, enabled = host.online && !busy && desktopAddress.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
                         Text("${host.name}${if (host.online) " · Online" else " · Offline"}")
                     }
