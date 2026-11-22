@@ -1,5 +1,11 @@
 # Registro de trabalho — Cobre TV
 
+## 2026-11-22 — serialização da renovação Cobre ID 0.6.0
+
+- Presença e renovação periódica do grant podem acordar perto da expiração do token Cobre ID; ambas passam a usar trava compartilhada do processo ao rotacionar a sessão.
+- A trava envolve leitura do refresh token atual, chamada autenticada e salvamento do próximo token, para impedir replay acidental no Server.
+- Build debug e lint local passaram em 22/11/2026. Workflow e validação física ainda pendentes.
+
 ## 2026-11-21 — heartbeat e telemetria do stream 0.5.0
 
 - A TV agora envia presença Cobre ID a cada 20 segundos enquanto o app está aberto; refresh da sessão ocorre antes de o token de acesso expirar.

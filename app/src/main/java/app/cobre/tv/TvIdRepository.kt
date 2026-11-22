@@ -142,22 +142,25 @@ class TvIdRepository(context: Context) {
     }
 
     suspend fun restoreSession(): TvAccountSession = withContext(Dispatchers.IO) {
-        val refresh = readRefreshToken() ?: throw TvIdException("Nenhuma sessão Cobre ID salva.")
-        try {
-            val response = request("/v1/refresh", "POST", JSONObject().put("refreshToken", refresh), authorize = false)
-            val user = response.optJSONObject("user") ?: throw TvIdException("O servidor não retornou os dados da conta.")
-            val device = response.optJSONObject("device") ?: throw TvIdException("O servidor não retornou os dados da TV.")
-            val nextRefresh = response.optString("refreshToken")
-            accessToken = response.optString("accessToken")
-            if (accessToken.isNullOrBlank() || nextRefresh.isBlank()) throw TvIdException("O servidor não retornou uma sessão válida.")
-            accessTokenExpiresAt = System.currentTimeMillis() + response.optLong("expiresIn", 900L).coerceIn(1L, 3600L) * 1000L
-            saveRefreshToken(nextRefresh)
-            prefs.edit().putString("email", user.optString("email")).putString("device_id", device.optString("id")).apply()
-            TvAccountSession(user.optString("email"), device.optString("name", "Cobre TV"))
-        } catch (error: Exception) {
-            accessToken = null
-            if (error is TvIdException && error.status == 401) clearSession()
-            throw error
+        synchronized(SESSION_REFRESH_LOCK) {
+            // Presence and scheduled Desktop-grant renewal can wake together near expiry.
+            val refresh = readRefreshToken() ?: throw TvIdException("Nenhuma sessão Cobre ID salva.")
+            try {
+                val response = request("/v1/refresh", "POST", JSONObject().put("refreshToken", refresh), authorize = false)
+                val user = response.optJSONObject("user") ?: throw TvIdException("O servidor não retornou os dados da conta.")
+                val device = response.optJSONObject("device") ?: throw TvIdException("O servidor não retornou os dados da TV.")
+                val nextRefresh = response.optString("refreshToken")
+                accessToken = response.optString("accessToken")
+                if (accessToken.isNullOrBlank() || nextRefresh.isBlank()) throw TvIdException("O servidor não retornou uma sessão válida.")
+                accessTokenExpiresAt = System.currentTimeMillis() + response.optLong("expiresIn", 900L).coerceIn(1L, 3600L) * 1000L
+                saveRefreshToken(nextRefresh)
+                prefs.edit().putString("email", user.optString("email")).putString("device_id", device.optString("id")).apply()
+                TvAccountSession(user.optString("email"), device.optString("name", "Cobre TV"))
+            } catch (error: Exception) {
+                accessToken = null
+                if (error is TvIdException && error.status == 401) clearSession()
+                throw error
+            }
         }
     }
 
@@ -285,5 +288,9 @@ class TvIdRepository(context: Context) {
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setRandomizedEncryptionRequired(true).build())
         return generator.generateKey()
+    }
+
+    companion object {
+        private val SESSION_REFRESH_LOCK = Any()
     }
 }

@@ -1,5 +1,11 @@
 # Histórico de versões — Cobre TV
 
+## 0.6.0 — evitar conflito ao renovar sessão Cobre ID
+
+- A renovação da sessão é serializada para impedir que a presença e a renovação programada da autorização Desktop reutilizem ao mesmo tempo o mesmo refresh token rotativo.
+- Cada renovação lê a versão atual do token sob a trava e mantém intacta a detecção do Server a reuso real de tokens.
+- Build debug e lint passaram localmente. A TV continua protótipo; publicação estável depende de assinatura e validação física.
+
 ## 0.5.0 — presença e diagnóstico do áudio
 
 - A TV envia presença Cobre ID a cada 20 segundos enquanto o app está aberto, para aparecer online no painel do Server.
