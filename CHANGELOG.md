@@ -4,7 +4,7 @@
 
 - A renovação da sessão é serializada para impedir que a presença e a renovação programada da autorização Desktop reutilizem ao mesmo tempo o mesmo refresh token rotativo.
 - Cada renovação lê a versão atual do token sob a trava e mantém intacta a detecção do Server a reuso real de tokens.
-- Build debug e lint passaram localmente. A TV continua protótipo; publicação estável depende de assinatura e validação física.
+- Build debug e lint passaram localmente e no [GitHub Actions](https://github.com/bruncosta077-boop/Cobre-TV/actions/runs/45052591367). A TV continua protótipo; publicação estável depende de assinatura e validação física.
 
 ## 0.5.0 — presença e diagnóstico do áudio
 

@@ -4,7 +4,7 @@
 
 - Presença e renovação periódica do grant podem acordar perto da expiração do token Cobre ID; ambas passam a usar trava compartilhada do processo ao rotacionar a sessão.
 - A trava envolve leitura do refresh token atual, chamada autenticada e salvamento do próximo token, para impedir replay acidental no Server.
-- Build debug e lint local passaram em 22/11/2026. Workflow e validação física ainda pendentes.
+- Build debug e lint local passaram em 22/11/2026; GitHub Actions passou no [workflow 45052591367](https://github.com/bruncosta077-boop/Cobre-TV/actions/runs/45052591367). Validação física e uma chave estável para distribuição continuam pendentes.
 
 ## 2026-11-21 — heartbeat e telemetria do stream 0.5.0
 
