@@ -1,5 +1,7 @@
 # Cobre TV
 
+O código do Cobre é proprietário e está disponível publicamente para inspeção. Consulte o [aviso de licença](LICENSE); componentes de terceiros mantêm suas próprias licenças.
+
 ![Banner do Cobre TV](app/src/main/res/drawable/banner.png)
 
 Aplicativo em **protótipo — versão 0.6.0** para Android TV e Google TV. A TV entra no Cobre ID, encontra computadores automaticamente na rede local ou usa o endereço manual, pede autorização por aparelho e carrega a biblioteca real. Com a aprovação no Desktop, reproduz o áudio diretamente pela rede local e informa presença e métricas agregadas de stream ao Cobre Server.
