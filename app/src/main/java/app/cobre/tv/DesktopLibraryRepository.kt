@@ -125,21 +125,7 @@ class DesktopLibraryRepository {
     }
 
     private fun normalizeOrigin(raw: String): String {
-        val uri = runCatching { URI(raw.trim().trimEnd('/')) }.getOrElse { throw IllegalArgumentException("Endereço local do Desktop inválido.") }
-        val scheme = uri.scheme?.lowercase()
-        val host = uri.host?.lowercase().orEmpty()
-        if (scheme !in setOf("http", "https") || host.isBlank() || uri.userInfo != null || uri.query != null || uri.fragment != null || uri.rawPath !in listOf("", "/")) {
-            throw IllegalArgumentException("Informe somente o endereço local do Cobre Desktop, sem chave ou caminho adicional.")
-        }
-        if (scheme == "http" && !isPrivateIpv4(host)) throw IllegalArgumentException("HTTP só é aceito para um endereço IPv4 privado da rede local.")
-        return raw.trim().trimEnd('/')
-    }
-
-    private fun isPrivateIpv4(host: String): Boolean {
-        val octets = host.split('.').map { it.toIntOrNull() ?: return false }
-        if (octets.size != 4 || octets.any { it !in 0..255 }) return false
-        val (a, b) = octets
-        return a == 10 || a == 127 || (a == 192 && b == 168) || (a == 172 && b in 16..31) || (a == 169 && b == 254)
+        return TvNetworkEndpoint.normalize(raw, "Cobre Desktop")
     }
 
     companion object {

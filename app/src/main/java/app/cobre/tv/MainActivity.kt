@@ -90,8 +90,7 @@ fun CobreTvApp() {
     var connectionMessage by remember { mutableStateOf("Conecte o Cobre ID e escolha um computador.") }
     var connectionError by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
-    var showServerDialog by remember { mutableStateOf(false) }
-    var showDesktopDialog by remember { mutableStateOf(false) }
+    var showConnectionsDialog by remember { mutableStateOf(false) }
     var pairingChallenge by remember { mutableStateOf<TvPairingChallenge?>(null) }
     var pairingJob by remember { mutableStateOf<Job?>(null) }
     var selectedAlbum by remember { mutableStateOf<DesktopAlbum?>(null) }
@@ -201,16 +200,16 @@ fun CobreTvApp() {
         }
     }
 
-    LaunchedEffect(showDesktopDialog, accountEmail) {
-        if (showDesktopDialog && accountEmail.isNotBlank()) {
+    LaunchedEffect(showConnectionsDialog, accountEmail) {
+        if (showConnectionsDialog && accountEmail.isNotBlank()) {
             runCatching { idRepository.desktops() }
                 .onSuccess { desktopHosts = it }
                 .onFailure { error -> connectionMessage = error.message ?: "Não foi possível localizar seus computadores."; connectionError = true }
         }
     }
 
-    DisposableEffect(showDesktopDialog, accountEmail, desktopDiscovery) {
-        if (showDesktopDialog && accountEmail.isNotBlank()) {
+    DisposableEffect(showConnectionsDialog, accountEmail, desktopDiscovery) {
+        if (showConnectionsDialog && accountEmail.isNotBlank()) {
             desktopDiscovery.start(
                 onChanged = { nearbyDesktops = it },
                 onError = { connectionMessage = it; connectionError = true },
@@ -229,7 +228,7 @@ fun CobreTvApp() {
                 idRepository.saveDesktopOrigin(origin)
                 desktopAddress = idRepository.desktopOrigin
                 val (requestId, expiresIn) = idRepository.requestDesktopAccess(hostId)
-                showDesktopDialog = false
+                showConnectionsDialog = false
                 connectionMessage = "Pedido enviado a $hostName. Aprove no Cobre Desktop."
                 connectionError = false
                 val deadline = System.currentTimeMillis() + expiresIn * 1000L
@@ -258,48 +257,7 @@ fun CobreTvApp() {
                 Text("Cobre", color = Copper2, style = MaterialTheme.typography.headlineLarge)
                 Text(if (accountEmail.isNotBlank()) "Cobre ID · $accountEmail" else "Música da sua biblioteca, na TV", color = Muted)
             }
-            Button(onClick = { showServerDialog = true }) { Text("Cobre Server") }
-            Button(onClick = {
-                if (accountEmail.isBlank()) {
-                    connectionMessage = "Configure o Cobre Server e conecte o Cobre ID primeiro."
-                    connectionError = true
-                } else showDesktopDialog = true
-            }, enabled = !busy && accountEmail.isNotBlank()) { Text("Computador") }
-            Button(onClick = {
-                if (serverAddress.isBlank()) {
-                    showServerDialog = true
-                } else {
-                    pairingJob?.cancel()
-                    pairingJob = scope.launch {
-                        busy = true
-                        connectionMessage = "Solicitando pareamento…"
-                        try {
-                            val challenge = idRepository.requestPairing()
-                            pairingChallenge = challenge
-                            connectionMessage = "Aprove o código no Cobre Mobile ou Desktop."
-                            val session = idRepository.awaitApproval(challenge)
-                            accountEmail = session.email
-                            pairingChallenge = null
-                            connectionMessage = "Cobre ID conectado · ${session.email}"
-                            connectionError = false
-                        } catch (error: CancellationException) { throw error }
-                        catch (error: Exception) {
-                            pairingChallenge = null
-                            connectionMessage = error.message ?: "Não foi possível conectar ao Cobre ID."
-                            connectionError = true
-                        } finally { busy = false }
-                    }
-                }
-            }, enabled = !busy) { Text(if (busy) "Aguardando…" else if (accountEmail.isBlank()) "Conectar Cobre ID" else "Vincular TV") }
-            if (accountEmail.isNotBlank()) Button(onClick = {
-                scope.launch {
-                    busy = true
-                    runCatching { idRepository.logout() }
-                    albums = emptyList(); activeGrantToken = ""; accountEmail = ""
-                    connectionMessage = "Sessão encerrada nesta TV."
-                    connectionError = false; busy = false
-                }
-            }, enabled = !busy) { Text("Sair") }
+            Button(onClick = { showConnectionsDialog = true }) { Text("Conexões") }
         }
         Text(connectionMessage, color = if (connectionError) Color(0xFFE58B78) else Muted, modifier = Modifier.padding(top = 12.dp, bottom = 20.dp))
 
@@ -309,7 +267,7 @@ fun CobreTvApp() {
                 Spacer(Modifier.height(10.dp))
                 Text("Conecte sua conta, escolha um Desktop online e aprove o acesso nele. O áudio segue direto do computador para esta TV.", color = Muted, style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(18.dp))
-                Button(onClick = { showDesktopDialog = true }, enabled = accountEmail.isNotBlank() && !busy) { Text("Conectar computador") }
+                Button(onClick = { showConnectionsDialog = true }, enabled = !busy) { Text("Configurar conexões") }
             }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
@@ -354,30 +312,57 @@ fun CobreTvApp() {
         }
     }
 
-    if (showServerDialog) {
+    if (showConnectionsDialog) {
         AlertDialog(
-            onDismissRequest = { showServerDialog = false }, title = { Text("Conectar ao Cobre Server") },
-            text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Informe o endereço do Cobre Server. No computador, TV e Server precisam estar na mesma rede.", color = Muted)
-                OutlinedTextField(value = serverAddress, onValueChange = { serverAddress = it }, label = { Text("Endereço do Server") }, placeholder = { Text("http://192.168.1.20:8080") }, singleLine = true)
-            } },
-            confirmButton = { Button(onClick = {
-                try {
-                    idRepository.saveServerUrl(serverAddress); serverAddress = idRepository.serverUrl; showServerDialog = false
-                    scope.launch { runCatching { idRepository.checkServer() }.onSuccess { ok -> connectionMessage = if (ok) "Cobre Server encontrado. Conecte o Cobre ID." else "O endereço não respondeu como Cobre Server."; connectionError = !ok }.onFailure { e -> connectionMessage = e.message ?: "Não foi possível alcançar o Server."; connectionError = true } }
-                } catch (error: Exception) { connectionMessage = error.message ?: "Endereço inválido."; connectionError = true }
-            }) { Text("Salvar e testar") } },
-            dismissButton = { Button(onClick = { showServerDialog = false }) { Text("Cancelar") } },
-        )
-    }
-
-    if (showDesktopDialog) {
-        AlertDialog(
-            onDismissRequest = { showDesktopDialog = false }, title = { Text("Conectar computador") },
+            onDismissRequest = { showConnectionsDialog = false }, title = { Text("Conexões") },
             text = { Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Escolha um computador encontrado na rede ou use o endereço manual. A descoberta só localiza o Desktop; o acesso ainda exige aprovação.", color = Muted)
+                Text("Configure aqui o Cobre Server, sua conta e o computador que fornece a música. Na mesma rede, a TV encontra o Desktop; fora de casa, use o endereço Tailscale.", color = Muted)
+                Text("1 · Cobre Server", color = Copper2, style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(value = serverAddress, onValueChange = { serverAddress = it }, label = { Text("Endereço do Server") }, placeholder = { Text("http://100.x.y.z:8080") }, singleLine = true)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onClick = {
+                        try {
+                            idRepository.saveServerUrl(serverAddress); serverAddress = idRepository.serverUrl
+                            scope.launch { runCatching { idRepository.checkServer() }.onSuccess { ok -> connectionMessage = if (ok) "Cobre Server encontrado." else "O endereço não respondeu como Cobre Server."; connectionError = !ok }.onFailure { e -> connectionMessage = e.message ?: "Não foi possível alcançar o Server."; connectionError = true } }
+                        } catch (error: Exception) { connectionMessage = error.message ?: "Endereço inválido."; connectionError = true }
+                    }, enabled = !busy) { Text("Salvar e testar") }
+                    Button(onClick = {
+                        if (serverAddress.isBlank()) { connectionMessage = "Configure primeiro o endereço do Cobre Server."; connectionError = true }
+                        else {
+                            showConnectionsDialog = false
+                            pairingJob?.cancel()
+                            pairingJob = scope.launch {
+                                busy = true; connectionMessage = "Solicitando pareamento…"
+                                try {
+                                    idRepository.saveServerUrl(serverAddress)
+                                    serverAddress = idRepository.serverUrl
+                                    val challenge = idRepository.requestPairing(); pairingChallenge = challenge
+                                    connectionMessage = "Aprove o código no Cobre Mobile ou Desktop."
+                                    val session = idRepository.awaitApproval(challenge)
+                                    accountEmail = session.email; pairingChallenge = null
+                                    connectionMessage = "Cobre ID conectado · ${session.email}"; connectionError = false
+                                } catch (error: CancellationException) { throw error }
+                                catch (error: Exception) { pairingChallenge = null; connectionMessage = error.message ?: "Não foi possível conectar ao Cobre ID."; connectionError = true }
+                                finally { busy = false }
+                            }
+                        }
+                    }, enabled = !busy && serverAddress.isNotBlank()) { Text(if (busy) "Aguardando…" else if (accountEmail.isBlank()) "Conectar Cobre ID" else "Vincular TV") }
+                }
+                if (accountEmail.isNotBlank()) {
+                    Text("Conta conectada · $accountEmail", color = Color(0xFFECE6DF))
+                    Button(onClick = {
+                        scope.launch { busy = true; runCatching { idRepository.logout() }; albums = emptyList(); activeGrantToken = ""; accountEmail = ""; connectionMessage = "Sessão encerrada nesta TV."; connectionError = false; busy = false }
+                    }, enabled = !busy) { Text("Sair da conta") }
+                }
+                Text("2 · Computador", color = Copper2, style = MaterialTheme.typography.titleMedium)
+                Text("O áudio vai direto do Desktop para a TV. Para conexão remota, instale Tailscale nos dois aparelhos e use o IP 100.x ou nome MagicDNS do Desktop. A aprovação continua sendo feita no Desktop.", color = Muted)
+                OutlinedTextField(value = desktopAddress, onValueChange = { desktopAddress = it }, label = { Text("Endereço do Desktop") }, placeholder = { Text("http://100.x.y.z:8787") }, singleLine = true)
+                Button(onClick = {
+                    try { idRepository.saveDesktopOrigin(desktopAddress); desktopAddress = idRepository.desktopOrigin; connectionMessage = "Endereço do Desktop salvo."; connectionError = false }
+                    catch (error: Exception) { connectionMessage = error.message ?: "Endereço inválido."; connectionError = true }
+                }, enabled = !busy) { Text("Salvar endereço") }
                 Text("Encontrados nesta rede", color = Copper2, style = MaterialTheme.typography.titleMedium)
-                if (nearbyDesktops.isEmpty()) Text("Procurando… Se nada aparecer, confirme que os aparelhos estão na mesma rede.", color = Muted)
+                if (nearbyDesktops.isEmpty()) Text("Procurando computadores na rede local…", color = Muted)
                 nearbyDesktops.forEach { nearby ->
                     Button(
                         onClick = { connectDesktop(nearby.hostId, nearby.name, nearby.origin) },
@@ -385,10 +370,7 @@ fun CobreTvApp() {
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(nearby.name) }
                 }
-                Text("Conectar manualmente", color = Copper2, style = MaterialTheme.typography.titleMedium)
-                Text("A chave não deve ser incluída no endereço.", color = Muted)
-                OutlinedTextField(value = desktopAddress, onValueChange = { desktopAddress = it }, label = { Text("Endereço local do Desktop") }, placeholder = { Text("http://192.168.1.20:8787") }, singleLine = true)
-                Text("Computadores da sua conta. O acesso precisa ser aprovado no Desktop.", color = Muted)
+                Text("Computadores da conta · acesso requer aprovação no Desktop", color = Copper2, style = MaterialTheme.typography.titleMedium)
                 if (desktopHosts.isEmpty()) Text("Nenhum Desktop registrado nesta conta.", color = Muted)
                 desktopHosts.forEach { host ->
                     Button(onClick = {
@@ -398,7 +380,7 @@ fun CobreTvApp() {
                     }
                 }
             } },
-            confirmButton = { Button(onClick = { showDesktopDialog = false }) { Text("Fechar") } },
+            confirmButton = { Button(onClick = { showConnectionsDialog = false }) { Text("Fechar") } },
         )
     }
 

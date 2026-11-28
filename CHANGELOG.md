@@ -1,5 +1,15 @@
 # Histórico de versões — Cobre TV
 
+## 0.7.0-rc.1 — conexões simples e acesso remoto por Tailscale
+
+- Reúne Server, Cobre ID e Desktop em uma única tela “Conexões”, com instruções diretas, estado da conta, descoberta local e escolha do computador.
+- Adiciona suporte a endereços Tailscale IPv4 (`100.64.0.0/10`) e MagicDNS (`*.ts.net`) nos campos de Server e Desktop. HTTP público continua bloqueado; HTTPS mantém a validação normal de certificado.
+- Explica na própria TV que, fora da rede local, os dois aparelhos precisam estar no mesmo tailnet e que o áudio segue direto do Desktop para a TV.
+- Adiciona testes locais para hosts permitidos, bloqueio de HTTP público e rejeição de URL com credenciais, caminho, query ou fragmento.
+- CI agora executa testes unitários, lint e build antes de guardar o APK de depuração.
+- `:app:testDebugUnitTest`, `:app:lintDebug` e `:app:assembleDebug` passaram localmente; são 3 testes unitários. O lint mantém avisos sobre target Android 34, versões mais novas de dependências e densidade do banner.
+- Ainda requer validação em Android TV/Google TV real. O Tailscale precisa estar instalado e conectado nos dois aparelhos; não há relay de áudio nem APK de distribuição assinado.
+
 ## 0.6.0 — evitar conflito ao renovar sessão Cobre ID
 
 - A renovação da sessão é serializada para impedir que a presença e a renovação programada da autorização Desktop reutilizem ao mesmo tempo o mesmo refresh token rotativo.

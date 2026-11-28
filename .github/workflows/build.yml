@@ -21,11 +21,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Compilar APK de depuração
+      - name: Testar e validar o app
         shell: bash
         run: |
           set +e
-          ./gradlew --no-daemon :app:assembleDebug --console=plain 2>&1 | tee "$RUNNER_TEMP/cobre-tv-gradle.log"
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain 2>&1 | tee "$RUNNER_TEMP/cobre-tv-gradle.log"
           build_status=${PIPESTATUS[0]}
           if [ "$build_status" -ne 0 ]; then
             details=$(grep -E '(^e: |^FAILURE:|^\* What went wrong:|^> Task .*FAILED|^Execution failed|Unresolved reference|Could not resolve|Compilation error)' "$RUNNER_TEMP/cobre-tv-gradle.log" | tail -n 35)

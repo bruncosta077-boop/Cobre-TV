@@ -218,37 +218,13 @@ class TvIdRepository(context: Context) {
     }
 
     private fun normalizeUrl(raw: String): String {
-        val value = raw.trim().trimEnd('/')
-        if (value.isBlank()) return ""
-        val uri = runCatching { URI(value) }.getOrElse { throw TvIdException("Endereço do Cobre Server inválido.") }
-        val scheme = uri.scheme?.lowercase()
-        val host = uri.host?.lowercase().orEmpty()
-        if (scheme !in setOf("http", "https") || host.isBlank() || uri.userInfo != null || uri.query != null || uri.fragment != null || uri.rawPath !in listOf("", "/")) {
-            throw TvIdException("Informe apenas o endereço base do Cobre Server.")
-        }
-        if (scheme == "http" && !isPrivateIpv4(host)) throw TvIdException("Por segurança, HTTP só é aceito para um endereço IPv4 privado da rede local.")
-        return value
+        return try { TvNetworkEndpoint.normalize(raw, "Cobre Server") }
+        catch (error: IllegalArgumentException) { throw TvIdException(error.message ?: "Endereço do Cobre Server inválido.") }
     }
 
     private fun normalizeDesktopOrigin(raw: String): String {
-        val value = raw.trim().trimEnd('/')
-        val uri = runCatching { URI(value) }.getOrElse { throw TvIdException("Endereço do Desktop inválido.") }
-        val scheme = uri.scheme?.lowercase()
-        val host = uri.host?.lowercase().orEmpty()
-        if (scheme !in setOf("http", "https") || host.isBlank() || uri.userInfo != null || uri.query != null || uri.fragment != null || uri.rawPath !in listOf("", "/")) {
-            throw TvIdException("Informe somente o endereço local do Cobre Desktop.")
-        }
-        if (scheme == "http" && !isPrivateIpv4(host)) throw TvIdException("HTTP só é aceito para um endereço IPv4 privado da rede local.")
-        return value
-    }
-
-    private fun isPrivateIpv4(host: String): Boolean {
-        val parts = host.split('.')
-        if (parts.size != 4) return false
-        val octets = parts.map { it.toIntOrNull() ?: return false }
-        if (octets.any { it !in 0..255 }) return false
-        val (a, b) = octets
-        return a == 10 || a == 127 || (a == 192 && b == 168) || (a == 172 && b in 16..31) || (a == 169 && b == 254)
+        return try { TvNetworkEndpoint.normalize(raw, "Cobre Desktop") }
+        catch (error: IllegalArgumentException) { throw TvIdException(error.message ?: "Endereço do Desktop inválido.") }
     }
 
     private fun saveRefreshToken(token: String) {

@@ -9,8 +9,8 @@ android {
         applicationId = "app.cobre.tv"   // provisório: troque pelo ID definitivo
         minSdk = 23
         targetSdk = 34
-        versionCode = 6
-        versionName = "0.6.0"
+        versionCode = 7
+        versionName = "0.7.0-rc.1"
     }
     buildFeatures {
         compose = true
@@ -30,4 +30,5 @@ dependencies {
     implementation("androidx.tv:tv-material:1.0.0")
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    testImplementation("junit:junit:4.13.2")
 }

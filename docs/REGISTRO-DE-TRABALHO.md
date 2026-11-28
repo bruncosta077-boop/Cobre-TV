@@ -1,5 +1,15 @@
 # Registro de trabalho — Cobre TV
 
+## 2026-11-28 — conexões centralizadas e Tailscale 0.7.0-rc.1
+
+- Unifiquei a configuração do Cobre Server, sessão Cobre ID, Desktop encontrado na rede, endereço manual e autorização em uma tela “Conexões”.
+- HTTP agora aceita endereços IPv4 privados, endereços Tailscale `100.64.0.0/10` e MagicDNS `*.ts.net`; HTTP público continua recusado e HTTPS mantém a validação de certificado do Android.
+- A tela explica a instalação/conexão do Tailscale nos dois aparelhos e que a mídia segue diretamente do Desktop para a TV, sem relay.
+- Adicionei testes unitários para a validação de endereços e atualizei o CI para executar testes, lint e build.
+- `:app:testDebugUnitTest`, `:app:lintDebug` e `:app:assembleDebug` passaram localmente; 3 testes unitários passaram. Permanecem avisos informativos de target/dependências/banner no lint.
+- APK debug gerado: 10.951.794 bytes, SHA-256 `B7A9B30D9D962CA4E36F647B677A7D0431B6C849CCE756BBD03EF4C8B46FB429`.
+- Pendente: validação física da rede/stream em Android TV ou Google TV. A versão RC não é release assinada.
+
 ## 2026-11-22 — serialização da renovação Cobre ID 0.6.0
 
 - Presença e renovação periódica do grant podem acordar perto da expiração do token Cobre ID; ambas passam a usar trava compartilhada do processo ao rotacionar a sessão.
@@ -52,7 +62,6 @@
 
 ## Pendências para tornar a TV utilizável
 
-- Descobrir Desktop autorizado e carregar sua biblioteca e capas reais.
-- Reproduzir áudio do Desktop com fila, controles, recuperação e estados de erro.
-- Testar pareamento e reprodução em Android TV/Google TV físico.
-- Criar fluxo de assinatura estável e publicação Android TV depois que atualização e reinstalação estiverem validadas.
+- Validar pareamento, descoberta local, autorização, capas, reprodução e reconexão Tailscale em Android TV/Google TV físico.
+- Tratar mudança/perda de rede durante reprodução e permitir retomada do stream.
+- Definir assinatura estável e distribuição para Android TV depois de confirmar atualização e reinstalação em dispositivo físico.
